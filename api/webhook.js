@@ -1,14 +1,20 @@
 import axios from 'axios';
 
+const WEBHOOKS = {
+  main: process.env.MAIN_WEBHOOK,     // Your first webhook
+  detector: process.env.DETECTOR_WEBHOOK  // Your second webhook
+};
+
 export default async (req, res) => {
-  if (req.method !== 'POST') return res.status(405).send('Use POST!');
-  if (process.env.SECRET_KEY && req.headers['secret-key'] !== process.env.SECRET_KEY) {
-    return res.status(403).send('Wrong key!');
-  }
+  // Security checks
+  if (req.method !== 'POST') return res.status(405).send('Method not allowed');
+  if (!WEBHOOKS[req.body.webhookType]) return res.status(400).send('Invalid webhook type');
+
   try {
-    await axios.post(process.env.DISCORD_WEBHOOK, req.body);
-    res.status(200).send('Success!');
+    // Forward to appropriate Discord webhook
+    await axios.post(WEBHOOKS[req.body.webhookType], req.body.data);
+    res.status(200).send('Success');
   } catch (error) {
-    res.status(500).send('Error sending to Discord!');
+    res.status(500).send('Discord error: ' + error.message);
   }
 };
